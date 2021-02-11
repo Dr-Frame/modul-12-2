@@ -1,21 +1,53 @@
 import './sass/styles.scss';
 import updateArticlesMarkup from './js/update-articles-markup';
-import fetchArticles from './js/fetch-articles';
+import newsService from './js/news-service';
 import refs from './js/refs';
 
-//строка запроса
-/* fetch('http://hn.algolia.com/api/v1/search?query=html&tags=story')
-  .then(res => res.json())
-  .then(data => console.log(data)); */
+const loadMoreBtn = {
+  enable() {
+    refs.loadMoreBtn.disabled = false;
+    refs.loadMoreBtnLabel.textContent = 'Показать ещё';
+    refs.loadMoreBtnSpinner.classList.add('is-hidden');
 
-refs.searchForm.addEventListener('submit', event => {
+    refs.loadMoreBtn.classList.remove('is-hidden');
+  },
+  disable() {
+    refs.loadMoreBtn.disabled = true;
+    refs.loadMoreBtnLabel.textContent = 'Загружаем...';
+    refs.loadMoreBtnSpinner.classList.remove('is-hidden');
+  },
+};
+
+refs.searchForm.addEventListener('submit', searchFormSubmitHandler);
+refs.loadMoreBtn.addEventListener('click', fetchArticles);
+
+function searchFormSubmitHandler(event) {
   event.preventDefault();
 
   const form = event.currentTarget;
-  const inputValue = form.elements.query.value;
+  newsService.query = form.elements.query.value;
 
-  refs.articleContainer.innerHTML = '';
+  clearArticleContainer();
+  newsService.resetPage();
+  fetchArticles();
   form.reset();
+}
 
-  fetchArticles(inputValue).then(updateArticlesMarkup);
-});
+function fetchArticles() {
+  loadMoreBtn.disable();
+
+  newsService.fetchArticles().then(articles => {
+    updateArticlesMarkup(articles);
+
+    loadMoreBtn.enable();
+  });
+}
+
+function clearArticleContainer() {
+  refs.articleContainer.innerHTML = '';
+}
+
+/* window.scrollTo({
+        top: document.documentElement.offsetHeight,
+        behavior: 'smooth',
+      }); */
